@@ -1,0 +1,9 @@
+development:
+  adapter: mysql2
+  encoding: utf8
+  reconnect: false
+  database: conf-in_development
+  pool: 5
+  host: <%= ENV.fetch('DATABASE_HOST') %>
+  username: <%= ENV.fetch('DATABASE_USER') %>
+  password: <%= ENV.fetch('DATABASE_PASSWORD') %>
