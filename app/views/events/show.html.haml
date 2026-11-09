@@ -1,10 +1,8 @@
-= render partial: 'like_init'
-
 .page-header
   %h1= @event.name
   %div{align: :right}
-    = render partial: 'tweet_button'
-    = render partial: 'like_button'
+    = link_to 'X で共有', "https://x.com/intent/tweet?#{URI.encode_www_form(url: event_url(@event), text: @event.name)}", target: '_blank', rel: 'noopener'
+    = link_to 'Facebook で共有', "https://www.facebook.com/sharer/sharer.php?#{URI.encode_www_form(u: event_url(@event))}", target: '_blank', rel: 'noopener'
   %div{align: :right}
     -if (!current_user.nil?) && (current_user.id == @event.owner_user_id)
       = render(partial: "admin_link")
@@ -17,8 +15,7 @@
     = render partial: 'sub_events'
   
     %h2 このイベントページに関連するツイート
-    -# 関連ツイートJavaScript
-    = render partial: 'twitter_search_widget'
+    = link_to 'X で関連投稿を検索', "https://x.com/search?#{URI.encode_www_form(q: event_url(@event))}", target: '_blank', rel: 'noopener'
 
   .span6
     = render partial: 'status'

@@ -5,7 +5,7 @@
 .row
   .span12
     = form_for [ :confirm, @event, @entry ] do |f|
-      = f.error_messages
+      = form_errors(f.object)
       %p
         = f.label '参加費用'
         .input= render 'fees_checkbox'
@@ -16,8 +16,8 @@
           .help-inline 30文字以内
       
       - @select_form.each do |i|
-        - if i[:setting] >= 1 then
-          - content = [''] + i[:content].split(',')
+        - if i[:setting].to_i >= 1 then
+          - content = [''] + i[:content].to_s.split(',')
           %p
             .input= "Q: #{i[:question]}"
             %br
@@ -26,7 +26,7 @@
               = f.select i[:answer], content
             %br
       - @free_form.each do |i|
-        - if i[:setting] >= 1 then
+        - if i[:setting].to_i >= 1 then
           %p
             .input= "Q: #{i[:question]}"
             %br
@@ -36,6 +36,5 @@
             %br
       .actions
         = f.submit f.object.new_record? ? '次へ' : '変更',
-          disable_with: '処理中...',
           class: 'btn primary'
         = link_to 'キャンセル', @event, class: 'btn'

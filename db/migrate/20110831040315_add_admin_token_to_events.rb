@@ -1,4 +1,4 @@
-class AddAdminTokenToEvents < ActiveRecord::Migration
+class AddAdminTokenToEvents < ActiveRecord::Migration[4.2]
   def change
     add_column :events, :admin_token, :string
 		add_index :events, :admin_token, unique: true

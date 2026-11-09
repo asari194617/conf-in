@@ -7,12 +7,14 @@
   %i= "#{@entry.user.name} 様"
 %hr
 %h2 参加費用
-= form_for [@event, @entry], url: { action: :update, id: @entry.id,
-    admin_token: @event.admin_token, qr_secret: @entry.user.qr_secret }, remote: true do |f|
+= form_with model: [@event, @entry],
+    url: event_entry_path(@event, @entry, admin_token: @event.admin_token, qr_secret: @entry.user.qr_secret),
+    data: {update_fees: true} do |f|
   #entry_fees_table
     = render partial: 'entry_fees_table'
   .actions
-    = f.submit disable_with: '処理中...', class: 'btn primary'
+    = f.submit '更新', class: 'btn primary'
+    %p{role: 'status', aria: {live: 'polite'}}
 
 %h2 アンケートの回答状況
 %table.indexTable

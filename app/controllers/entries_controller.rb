@@ -1,34 +1,29 @@
 # coding: utf-8
 require 'csv'
-require 'kconv'
 class EntriesController < ApplicationController
   # 認証要求
-  before_filter :authenticate_user!, except: [ :qr_receive, :update, :index ]
+  before_action :authenticate_user!, except: [:qr_receive, :update, :index]
   
   # イベント情報を引っ張る
-  before_filter :find_event
+  before_action :find_event
   
   # admin_tokenによる認証
   # ミス防止のために，フィルタしないものを指定
-  before_filter :authenticate_by_admin_token!,
-    except: [:new, :confirm, :complete, :ticket, :destroy]
+  before_action :authenticate_by_admin_token!, only: [:index, :qr_receive, :update]
   
   # 定員に達したか？
-  before_filter :entries_filled,
-    :only => [ :new, :create, :confirm, :complete ]
+  before_action :entries_filled, only: [:new, :confirm]
  
   # 受付期間内か？
-  before_filter :can_entry,
-    :only => [ :new, :create, :confirm, :complete, :destroy ]
+  before_action :can_entry, only: [:new, :confirm, :destroy]
   
   # 既に参加しているかどうか
-  before_filter :already_has_joined, only: [:new, :confirm, :complete]
+  before_action :already_has_joined, only: [:new, :confirm, :complete]
   
   # GET /entries/new
   # イベント参加登録
   def new
-    @entry = Entry.new
-    @user_id = current_user.id
+    @entry = @event.entries.build(user: current_user)
     @page_title = "イベントに参加 | #{@event.name}"
     
     # EventFeeを取得
@@ -39,11 +34,9 @@ class EntriesController < ApplicationController
   # POST /entries/confirm
   # 参加登録内容の確認
   def confirm
-    @entry = Entry.new(params[:entry])
+    @entry = @event.entries.build(entry_params)
+    @entry.user = current_user
     @page_title = "確認 | #{@event.name}"
-
-    @entry.event_id = @event_id
-    @entry.user_id = current_user.id
 
     # EventFeeを取得
     @event_fees = @event.event_fees
@@ -51,74 +44,78 @@ class EntriesController < ApplicationController
 
     
     if @entry.valid?
-      render :action => 'confirm'
+      render :confirm
     else
-      render :action => 'new'
+      render :new, status: :unprocessable_content
     end
   end
 
   # POST /entries/complete
   # 参加登録完了
   def complete
-    @sub_events = @event.sub_events
+    @event.with_lock do
+      can_entry
+      entries_filled unless performed?
+      unless performed?
+        @entry = @event.entries.build(entry_params)
+        @entry.user = current_user
+        @entry.save
+      end
+    end
+    return if performed?
 
-    @entry = Entry.new(params[:entry])
-    @entry.user_id = current_user.id
-    @entry_fees = @entry.entry_fees
-
-    @page_title = "参加登録完了 | #{@event.name}"
-    
-    if (@event.entries << @entry)
-      render :action => 'complete'
-      EntryMailer.new_entry_user(@entry).deliver
-      #EntryMailer.notify_new_entry_to_owner(@entry).deliver
+    if @entry.persisted?
+      @page_title = "参加登録完了 | #{@event.name}"
+      @sub_events = @event.sub_events
+      @entry_fees = @entry.entry_fees
+      @entry_mail_sent = deliver_mail(EntryMailer.new_entry_user(@entry))
+      flash.now[:alert] = '参加登録は完了しましたが、完了メールの送信に失敗しました。' unless @entry_mail_sent
+      render :complete
     else
-      #render :action => :new
-      redirect_to event_path(@event)
+      @page_title = "イベントに参加 | #{@event.name}"
+      @event_fees = @event.event_fees
+      @fee_ids = @entry.entry_fees.map(&:event_fee_id)
+      render :new, status: :unprocessable_content
     end
   end
 
   # PUT /entries/1
   # 当日受付情報の更新
   def update
-    @user = @event.users.find_by_qr_secret(params[:qr_secret])
-    @entry = @event.entries.find_by_user_id(@user.id)
-    
-    @entry.update_attributes(params[:entry])
-    
-    #redirect_to :back
-    render "entry_fees_table.js"
-  rescue
-    redirect_to root_path
-  end
-  
-  # POST /entries/ticket
-  # チケットの描画
-  def ticket
-    @entry = Entry.new(params[:entry])
-    @entry.user_id = current_user.id
+    @entry = entries_for_qr_secret.find(params[:id])
+    if params.key?(:entry)
+      @entry.update!(params.expect(entry: [entry_fees_attributes: [[:id, :paid]]]))
+    end
 
-    render :action => 'ticket'
+    if request.xhr?
+      render partial: 'entry_fees_table'
+    else
+      redirect_to qr_receive_event_entries_path(@event, admin_token: @event.admin_token,
+        qr_secret: @entry.user.qr_secret), status: :see_other
+    end
+  rescue ActiveRecord::RecordNotFound, ActiveRecord::RecordInvalid
+    if request.xhr?
+      head :unprocessable_content
+    else
+      redirect_to root_path, alert: '受付情報の更新に失敗しました。', status: :see_other
+    end
   end
 
   # DELETE /entries/1
   # 参加登録の解除
   def destroy
     #パラメータ
-    id = params[:id]
-    #カレントユーザの参加イベントから検索
-    @entry = current_user.entries.find(id)
+    @entry = current_user.entries.find_by!(id: params[:id], event: @event)
 
     #エントリー削除
-    @entry.destroy
-    #@entry.save!
+    @entry.destroy!
     #イベントページへリダイレクト
     redirect_to event_path(@event),
-      notice: '参加をキャンセルしました。'
-  rescue
+      notice: '参加をキャンセルしました。', status: :see_other
+  rescue ActiveRecord::RecordNotFound, ActiveRecord::RecordNotDestroyed
     #トップページへリダイレクト
     redirect_to root_path,
-      alert: 'キャンセルに失敗しました。'
+      alert: 'キャンセルに失敗しました。', status: :see_other
   end
   
   
@@ -133,7 +130,7 @@ class EntriesController < ApplicationController
     respond_to do |format|
       format.html
       format.csv do
-        CSV.generate(output = "", row_sep: "\r\n") do |csv|
+        output = CSV.generate(row_sep: "\r\n") do |csv|
           @event_fees = @event.event_fees
 
           # 参加費用名
@@ -157,7 +154,7 @@ class EntriesController < ApplicationController
             # 参加費用ごとの徴収状況
             fees_paid = []
             @event_fees.each do |fee|
-              if entry_fee = entry.entry_fees.find_by_event_fee_id(fee.id)
+              if entry_fee = entry.entry_fees.find_by(event_fee_id: fee.id)
                 fees_paid << (entry_fee.paid ? '済':'未')
               else
                 fees_paid << ''
@@ -178,25 +175,37 @@ class EntriesController < ApplicationController
           end
         end
  
-        send_data NKF.nkf('-sxm0', output), type: 'text/csv',
-          filename: "#{@event.id}(#{Time.now.strftime('%Y%m%d-%H%M')}).csv"
+        send_data output.encode('Windows-31J', invalid: :replace, undef: :replace),
+          type: 'text/csv; charset=Windows-31J',
+          filename: "#{@event.id}(#{Time.current.strftime('%Y%m%d-%H%M')}).csv"
       end
     end
   end
   
   # 受付ページ
   def qr_receive
-    @user = @event.users.find_by_qr_secret(params[:qr_secret])
-    @entry = @event.entries.find_by_user_id(@user.id)
+    @entry = entries_for_qr_secret.first!
 
     @page_title = "受付情報 | #{@event.name}"
 
-  rescue
+  rescue ActiveRecord::RecordNotFound
     redirect_to root_path,
       alert: 'QRコードが間違っている、あるいは参加登録がされていません。'
   end
 
 private
+  def entry_params
+    survey_fields = (1..5).flat_map { |i| ["select#{i}", "free#{i}"] }
+    params.expect(entry: [:comment, *survey_fields, entry_fees_attributes: [[:event_fee_id]]])
+  end
+
+  def entries_for_qr_secret
+    secret = params[:qr_secret]
+    return @event.entries.none unless secret.is_a?(String) && secret.present?
+
+    @event.entries.joins(:user).where(users: { qr_secret: secret })
+  end
+
   # パラメータからイベントを取得
   def find_event
     @event_id = params[:event_id]
@@ -204,7 +213,7 @@ private
       return redirect_to(events_path, 
                          alert: 'イベントは削除されたもしくは存在しません。')
     end
-    @event = Event.includes(:entries).find(@event_id)
+    @event = Event.find(@event_id)
     
     @select_form = [
       { :answer => :select1,
@@ -249,31 +258,35 @@ private
 
   # 定員に達したか？
   def entries_filled
-    if @event.entries.all.count >= @event.capacity
+    if @event.entries.count >= @event.capacity
       redirect_to @event,
-        alert: '既に定員に達しています。'
+        alert: '既に定員に達しています。', status: :see_other
     end
   end
   
   # 受付期間内か？
   def can_entry
-    unless @event.joinable_period_begin <= Time.now && Time.now <= @event.joinable_period_end
+    unless Time.current.between?(@event.joinable_period_begin, @event.joinable_period_end)
       redirect_to @event,
-        alert: '参加登録期間は開始していない、もしくは終了しています。'
+        alert: '参加登録期間は開始していない、もしくは終了しています。', status: :see_other
     end
   end
   
   # イベント管理者ページのトークン認証
   def authenticate_by_admin_token!
-    unless @event.admin_token == params[:admin_token]
-      redirect_to root_path, alert: 'アクセス権限がありません。'
+    unless event_admin?
+      if request.xhr?
+        head :forbidden
+      else
+        redirect_to root_path, alert: 'アクセス権限がありません。', status: :see_other
+      end
     end
   end
 
   # 既に参加しているかどうか
   def already_has_joined
-    if @event.entries.find_by_user_id(current_user.id)
-      redirect_to @event, alert: 'あなたは既にこのイベントに参加しています。'
+    if @event.entries.exists?(user: current_user)
+      redirect_to @event, alert: 'あなたは既にこのイベントに参加しています。', status: :see_other
     end
   end
 

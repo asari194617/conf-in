@@ -1,4 +1,4 @@
-class RemovePlaceRoomFromEvents < ActiveRecord::Migration
+class RemovePlaceRoomFromEvents < ActiveRecord::Migration[4.2]
   def up
     remove_column :events, :place_room
   end

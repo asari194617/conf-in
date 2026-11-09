@@ -11,12 +11,12 @@
         %th= I18n.t 'activerecord.attributes.entry.comment'
         %td= @entry.comment
       - @select_form.each do |f|
-        - if f[:setting] > 0
+        - if f[:setting].to_i > 0
           %tr
             %th= f[:question]
             %td= @entry[f[:answer]]
       - @free_form.each do |f|
-        - if f[:setting] > 0
+        - if f[:setting].to_i > 0
           %tr
             %th= f[:question]
             %td= @entry[f[:answer]]

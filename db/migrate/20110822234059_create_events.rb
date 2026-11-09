@@ -1,4 +1,4 @@
-class CreateEvents < ActiveRecord::Migration
+class CreateEvents < ActiveRecord::Migration[4.2]
 	def change
 		create_table :events do |t|
 			t.string   "name"
@@ -54,7 +54,7 @@ class CreateEvents < ActiveRecord::Migration
 			t.integer  "free_setting4"
 			t.integer  "free_setting5"
 
-			t.timestamps
+			t.timestamps null: false
 		end
 	end
 end

@@ -4,7 +4,7 @@
   .span10
     = form_for [ @event, @mail ],
       url: event_event_mails_path(@event, admin_token: @event.admin_token) do |f|
-      = f.error_messages
+      = form_errors(f.object)
       %p
         = f.label '送信先'
         %p.input 参加者全員
@@ -19,5 +19,5 @@
           %pre= hbr @mail.text
 
       .actions
-        = f.submit '送信', disable_with: '処理中...', class: 'btn primary'
-        = link_to_function '戻る', 'history.back()', class: :btn
+        = f.submit '送信', class: 'btn primary'
+        %button.btn{type: 'button', data: {history_back: true}} 戻る

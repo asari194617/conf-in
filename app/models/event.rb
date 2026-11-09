@@ -6,7 +6,7 @@ class Event < ActiveRecord::Base
   
 	#エントリー
   has_many :entries,
-    :dependent => :delete_all #イベントを消去した際，そのエントリをすべて抹消
+    :dependent => :destroy #イベントを消去した際，そのエントリをすべて抹消
   # 参加者
   has_many :users, through: :entries
   
@@ -16,10 +16,10 @@ class Event < ActiveRecord::Base
     :foreign_key => "owner_user_id"
 
   # 参加費情報
-  has_many :event_fees, dependent: :delete_all
+  has_many :event_fees, dependent: :destroy
   
   # 参加費
-  has_many :entry_fees, dependent: :delete_all, through: :event_fees
+  has_many :entry_fees, through: :event_fees
   
   # 参加費フォーム
   # 名前と金額が空なら削除
@@ -30,11 +30,13 @@ class Event < ActiveRecord::Base
   #サブイベント
   has_many :sub_events,
     :class_name => "Event",
-    :foreign_key => "main_event_id"
+    :foreign_key => "main_event_id",
+    :dependent => :nullify
   #メインイベント
   belongs_to :main_event,
     :class_name => "Event",
-    :foreign_key => "main_event_id"
+    :foreign_key => "main_event_id",
+    :optional => true
 
 	#一意であるべき値
   validates_uniqueness_of :name,
@@ -55,15 +57,12 @@ class Event < ActiveRecord::Base
     :greater_than => 0, #0 より大きくなければならない
     :message => "0より大きい値を入力してください。"
 
-	# 偽造フォームからのフィールドの保護
-	attr_protected :owner_user_id, :admin_token
-  
   # 参加者から徴収する全金額
   def all_entry_fees_sum
     sum = 0
     self.event_fees.each do |ev_fee|
       # 金額 x 人数
-      sum += ev_fee.sum * ev_fee.entry_fees.all.count
+      sum += ev_fee.sum * ev_fee.entry_fees.count
     end
     return sum
   end
@@ -76,5 +75,4 @@ protected
 		self.admin_token = SecureRandom.hex(16).encode('UTF-8')
 	end
 
-  include ActiveRecord::Calculations
 end

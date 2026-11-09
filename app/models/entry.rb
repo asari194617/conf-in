@@ -1,7 +1,6 @@
 # coding: utf-8
 class Entry < ActiveRecord::Base
 
-  include ActiveRecord::Calculations
   #イベント
   belongs_to :event
   #参加ユーザ
@@ -14,7 +13,7 @@ class Entry < ActiveRecord::Base
   # 参加費フォーム
   # 名前と金額が空なら削除
   accepts_nested_attributes_for :entry_fees,
-    :reject_if => lambda { |f| f[:event_fee_id].blank? }
+    reject_if: ->(fee) { fee[:id].blank? && fee[:event_fee_id].blank? }
   
   #空の値をはじく
   validates_presence_of :event_id, :user_id,
@@ -28,16 +27,14 @@ class Entry < ActiveRecord::Base
   validates_length_of :comment, :maximum => 30
 
   #アンケートの設定に応じた必須項目の設定
-  validates_presence_of :select1, :if => Proc.new { |e| e.event.select_setting1 == 2 }
-  validates_presence_of :select2, :if => Proc.new { |e| e.event.select_setting2 == 2 }
-  validates_presence_of :select3, :if => Proc.new { |e| e.event.select_setting3 == 2 }
-  validates_presence_of :select4, :if => Proc.new { |e| e.event.select_setting4 == 2 }
-  validates_presence_of :select5, :if => Proc.new { |e| e.event.select_setting5 == 2 }
-  validates_presence_of :free1, :if => Proc.new { |e| e.event.free_setting1 == 2 }
-  validates_presence_of :free2, :if => Proc.new { |e| e.event.free_setting2 == 2 }
-  validates_presence_of :free3, :if => Proc.new { |e| e.event.free_setting3 == 2 }
-  validates_presence_of :free4, :if => Proc.new { |e| e.event.free_setting4 == 2 }
-  validates_presence_of :free5, :if => Proc.new { |e| e.event.free_setting5 == 2 }
+  (1..5).each do |i|
+    validates :"select#{i}", presence: true, on: :create,
+      if: -> { event&.public_send("select_setting#{i}") == 2 }
+    validates :"free#{i}", presence: true, on: :create,
+      if: -> { event&.public_send("free_setting#{i}") == 2 }
+  end
+
+  validate :fees_belong_to_event, on: :create
 
   #フリーアンケートの文字数制限
   validates_length_of :free1, :maximum => 400, :allow_nil => true
@@ -55,14 +52,15 @@ class Entry < ActiveRecord::Base
 
 	# 参加費用の合計
 	def fees_sum
-		return self.event_fees.sum(:sum)
+		event_fees.sum(:sum)
 	end
 
-=begin
-private
-  def user_exsist?
-    errors.add(:user_id, "ユーザは存在しません。") unless User.find_by_id(user_id)
-  end
-=end
+  private
 
+  def fees_belong_to_event
+    fees = entry_fees.map(&:event_fee)
+    if fees.any? { |fee| fee.nil? || fee.event_id != event_id } || fees.uniq.size != fees.size
+      errors.add(:entry_fees, 'に無効な参加費用が含まれています。')
+    end
+  end
 end

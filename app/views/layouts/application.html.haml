@@ -1,25 +1,22 @@
 !!!
-%html
+%html{lang: 'ja'}
   %head
-    %meta{'http-equiv' => 'Content-Type', content: 'text/html; charset=utf-8'}
+    %meta{charset: 'utf-8'}
+    %meta{name: 'viewport', content: 'width=device-width, initial-scale=1'}
     %title= title
-    = stylesheet_link_tag     "application"
-    = javascript_include_tag  "application"
+    = stylesheet_link_tag 'application'
+    = javascript_include_tag 'application', defer: true
     = csrf_meta_tags
   %body
-    -if notice
-      .alert-message.info.hide
-        = notice
-    -if alert
-      .alert-message.warning.hide
-        = alert
-    -if danger = flash[:danger]
-      .alert-message.danger.hide
-        = danger
-
     .topbar
-      .topbar-inner
-        .container
-          = render partial: 'common/header'
-    .container
-      .content= yield
+      %nav.container{aria: {label: 'メインナビゲーション'}}
+        = render 'common/header'
+    %main.container
+      .content
+        - if notice
+          .alert-message.info{role: 'status'}= notice
+        - if alert
+          .alert-message.warning{role: 'alert'}= alert
+        - if flash[:danger]
+          .alert-message.danger{role: 'alert'}= flash[:danger]
+        = yield

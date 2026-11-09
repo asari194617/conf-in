@@ -13,15 +13,11 @@
       住所：
       = @event.place_address
       %br
-      Web：
-      = link_to @event.place_website, @event.place_website
-  %tr
-    %td{colspan: 2}
-      %div{align: :center}
-        = render partial: 'map'
-        %div{id: "map_canvas", style: "width: 520px; height: 500px;"}
-        %div{id: "map", style: "display:none;"}
-          %p 住所より地図の特定が出来ませんでした
+      = link_to '地図で見る', google_maps_url(@event.place_address), target: '_blank', rel: 'noopener'
+      - if @event.place_website.present?
+        %br
+        Web：
+        = website_link @event.place_website
 
   -# 参加費
   %tr  
@@ -38,8 +34,8 @@
           %tr
             %th= fee.name
             %td= number_to_currency(fee.sum, unit: "円", precision: 0, format: "%n %u")
-            %td= "#{fee.entry_fees.count(:all, conditions: ['entry_fees.paid = ?', false])} 人"
-            %td= "#{fee.entry_fees.count(:all, conditions: ['entry_fees.paid = ?', true])} 人"
+            %td= "#{fee.entry_fees.where(paid: false).count} 人"
+            %td= "#{fee.entry_fees.where(paid: true).count} 人"
 
   -# 定員
   %tr  
@@ -61,17 +57,18 @@
   -# WebSite
   %tr  
     %th WebSite
-    %td= link_to @event.website, @event.website
+    %td= website_link @event.website
 
   -# 主催者
   %tr  
     %th 主催者
     %td
-      = twicon_tag @owner_user, :mini
-      = link_to @owner_user.name, @owner_user
+      - if @owner_user
+        = twicon_tag @owner_user, :mini
+        = link_to @owner_user.name, @owner_user
 
   -# 連絡先
   %tr  
     %th 連絡先
     %td= mail_to(@event.hosting_email, @event.hosting_group,
-      subject: "[#{@event.name}]お問い合わせ", encode: "javascript")
+      subject: "[#{@event.name}]お問い合わせ")

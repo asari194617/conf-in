@@ -3,7 +3,7 @@ class EntryMailer < ActionMailer::Base
   include ApplicationHelper
   helper ApplicationHelper
   
-  default from: $ADMIN_EMAIL
+  default from: -> { Rails.configuration.x.mail_from }
 
   # Subject can be set in your I18n file at config/locales/en.yml
   # with the following lookup:
@@ -17,7 +17,7 @@ class EntryMailer < ActionMailer::Base
 
     # 添付ファイル
     if @event.qr_use
-      attachments.inline["#{@user.id}.gif"] = qr_gif_binary(@user.qr_secret)
+      attachments.inline["#{@user.id}.png"] = qr_png_binary(@user.qr_secret)
     end
 
     mail to: @user.email, 

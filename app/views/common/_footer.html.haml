@@ -11,4 +11,7 @@
   = ' | '
   = link_to 'カンファインについて', about_path
   = ' | '
-  = mail_to $ADMIN_EMAIL, "問い合わせ", subject: "[カンファイン]お問い合わせ", encode: "javascript"
+  - if Rails.configuration.x.contact_email
+    = mail_to Rails.configuration.x.contact_email, "問い合わせ", subject: "[カンファイン]お問い合わせ"
+  - else
+    = link_to "問い合わせ", help_path(anchor: "contact")

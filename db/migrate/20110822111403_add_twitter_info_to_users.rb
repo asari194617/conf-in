@@ -1,4 +1,4 @@
-class AddTwitterInfoToUsers < ActiveRecord::Migration
+class AddTwitterInfoToUsers < ActiveRecord::Migration[4.2]
   def change
     add_column :users, :tw_uid, :integer
     add_column :users, :tw_name, :string

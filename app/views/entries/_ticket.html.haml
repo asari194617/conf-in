@@ -15,5 +15,5 @@
     %tr
       %th= I18n.t 'activerecord.attributes.user.qr_secret'
       %td
-        %a{href: '#', data: {'controls-modal' => :'send_qr' }}
+        %button.thumbnail{type: 'button', data: {open_dialog: 'send_qr'}}
           = qrimg_tag current_user.qr_secret

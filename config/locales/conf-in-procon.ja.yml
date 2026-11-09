@@ -46,7 +46,7 @@ ja:
         capacity: "定員"
         expense:  "参加費用"
         joinable_period_begin: "参加受付開始日時"
-        joinable_periodend: "参加受付終了日時"
+        joinable_period_end: "参加受付終了日時"
         hosting_group: "開催団体等"
         hosting_email: "連絡先"
         owner_user_id:  "代表者"

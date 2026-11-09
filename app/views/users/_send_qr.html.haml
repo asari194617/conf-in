@@ -1,14 +1,11 @@
 .modal-header
-  %a.close{href: '#'} &times;
-  %h3 受付用QRコード
-
-= form_tag controller: :'/users', action: :send_qr, method: :post do
-  .modal-body
-    %p イベント当日の受付用QRコードです。
-    %center= qrimg_tag current_user.qr_secret, class: :thumbnail, width: 300
-    %p 指定したメールアドレスに送信することもできます。
-    = label_tag :email, 'メールアドレス'
-    .input
-      = text_field_tag :email
-      = submit_tag '送信', class: :'btn primary'
-  
+  %h2#send-qr-title 受付用QRコード
+  %button.btn{type: 'button', data: {close_dialog: true}} 閉じる
+= form_with url: send_qr_users_path do
+  %p イベント当日の受付用QRコードです。
+  .qr-image= qrimg_tag current_user.qr_secret, width: 300
+  %p 指定したメールアドレスに送信することもできます。
+  = label_tag :email, 'メールアドレス'
+  .input
+    = email_field_tag :email, nil, required: true
+    = submit_tag '送信', class: 'btn primary'

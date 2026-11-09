@@ -1,5 +1,5 @@
 = form_for @event, url: form_url do |f|
-  = f.error_messages
+  = form_errors(f.object)
   %h2 基本情報
   %p
     = f.label :name
@@ -93,7 +93,6 @@
 
   .actions
     = f.submit f.object.new_record? ? '作成':'変更を保存',
-      disable_with: '処理中...',
       class: 'btn primary'
     = link_to 'キャンセル', :back, class: :btn
 

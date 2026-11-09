@@ -23,6 +23,7 @@ ja:
       locked: 'あなたのアカウントは凍結されています。'
 #      locked: 'Your account is locked.'
       invalid: 'メールアドレスかパスワードが違います。'
+      not_found_in_database: 'メールアドレスかパスワードが違います。'
 #      invalid: 'Invalid email or password.'
       invalid_token: '認証キーが不正です。'
 #      invalid_token: 'Invalid authentication token.'
@@ -34,8 +35,10 @@ ja:
       signed_in: 'ログインしました。'
 #      signed_in: 'Signed in successfully.'
       signed_out: 'ログアウトしました。'
+      already_signed_out: 'ログアウトしました。'
 #      signed_out: 'Signed out successfully.'
     passwords:
+      no_token: 'パスワード再設定メールに記載されたURLを開いてください。'
       send_instructions: 'パスワードのリセット方法を数分以内にメールでご連絡します。'
 #      send_instructions: 'You will receive an email with instructions about how to reset your password in a few minutes.'
       updated: 'パスワードを変更しました。'

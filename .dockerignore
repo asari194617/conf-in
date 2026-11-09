@@ -1,0 +1,11 @@
+.git
+.bundle
+.ruby-lsp
+.env
+.env.*
+db/*.sqlite3*
+log/*
+tmp/*
+public/assets
+vendor/bundle
+vendor/cache

@@ -12,6 +12,4 @@ class EventMail < ActiveRecord::Base
     presence: true,
     length: { maximum: 2000 }
 
-  # 保護
-  attr_protected :event_id
 end

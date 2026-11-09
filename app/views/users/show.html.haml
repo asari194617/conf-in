@@ -15,7 +15,7 @@
           target: '_blank' unless @user.tw_id.blank?
       %tr
         %th Webサイト
-        %td= link_to h(@user.website), @user.website, target: '_blank'
+        %td= website_link @user.website, target: '_blank', rel: 'noopener'
       %tr
         %th 職業
         %td= @user.job
@@ -23,11 +23,14 @@
         %th 勤務先・学校
         %td= @user.office
     %h2 旅のあしあと
-    %div{align: :center}
-      = render partial: 'map'
-      %div{id: "map_canvas", style: "width: 500px; height: 600px;"}
-      %div{id: "map", style: "display:none;"}
-        %p 住所より地図の特定が出来ませんでした
+    - if @events.any?
+      %ul
+        - @events.each do |event|
+          %li
+            = link_to event.name, event
+            = link_to '会場の地図', google_maps_url(event.place_address), target: '_blank', rel: 'noopener' if event.place_address.present?
+    - else
+      %p 参加したイベントはありません。
   .span6
     %h3= "#{@user.name}が参加したイベント"
     %ul

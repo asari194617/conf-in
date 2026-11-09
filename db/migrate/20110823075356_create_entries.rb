@@ -1,4 +1,4 @@
-class CreateEntries < ActiveRecord::Migration
+class CreateEntries < ActiveRecord::Migration[4.2]
 	def change
 		create_table :entries do |t|
 			t.integer  "event_id"
@@ -19,7 +19,7 @@ class CreateEntries < ActiveRecord::Migration
 
 			t.integer  "received"
 
-			t.timestamps
+			t.timestamps null: false
 		end
 	end
 end

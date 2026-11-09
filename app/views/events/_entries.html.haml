@@ -2,6 +2,6 @@
 %ul.media-grid
   - @entries.each do |entry|
     %li
-      %a{href: (entry.user.tw_id.blank? ? user_path(entry.user) : "http://twitter.com/#{entry.user.tw_id}"),
-      class: :thumbnail, data: {content: entry.comment, :'original-title' => entry.user.name, placement: :left}, rel: 'popover'}
+      %a.thumbnail{href: (entry.user.tw_id.blank? ? user_path(entry.user) : "https://x.com/#{entry.user.tw_id}"),
+        title: [entry.user.name, entry.comment.presence].compact.join(' — ')}
         = twicon_tag entry.user, :normal

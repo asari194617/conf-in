@@ -17,13 +17,10 @@ class EventFee < ActiveRecord::Base
       greater_than_or_equal_to: 0
     }
 
-  # 偽造フォームからのフィールドの保護
-  attr_protected :paid
-
   # 参加者から徴収する合計金額
   def entry_fees_sum
     # 金額 x 人数
-    sum = self.sum * self.entry_fees.all.count
+    sum = self.sum * self.entry_fees.count
 
     return sum
   end

@@ -1,4 +1,4 @@
-class RemoveExpenseFromEvents < ActiveRecord::Migration
+class RemoveExpenseFromEvents < ActiveRecord::Migration[4.2]
   def up
     remove_column :events, :expense
   end

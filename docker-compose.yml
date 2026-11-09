@@ -1,27 +1,34 @@
-version: '3'
 services:
   db:
-    image: mysql:5.6
-    platform: linux/amd64
-    restart: always
+    image: mysql:9.7.4
     environment:
-      MYSQL_ROOT_PASSWORD: password
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_DATABASE: conf_in
+      MYSQL_USER: conf_in
+      MYSQL_PASSWORD: conf_in_local
     volumes:
-      - db_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysql", "-h", "127.0.0.1", "-uconf_in", "-pconf_in_local", "conf_in", "-e", "SELECT 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
   web:
     build: .
-    command: bundle exec rails server -b 0.0.0.0
-    volumes:
-      - .:/usr/src/app
+    command: ["sh", "-c", "bin/rails db:prepare && exec bin/rails server -b 0.0.0.0"]
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      DATABASE_HOST: db
-      DATABASE_USER: root
-      DATABASE_PASSWORD: password
+      DATABASE_URL: mysql2://conf_in:conf_in_local@db/conf_in?encoding=utf8mb4
+      APP_HOST: ${APP_HOST:-localhost:3000}
+      APP_PROTOCOL: ${APP_PROTOCOL:-http}
+      GMAIL_DOMAIN: ${GMAIL_DOMAIN:-localhost}
+      GMAIL_USER: ${GMAIL_USER:-}
+      GMAIL_PASSWORD: ${GMAIL_PASSWORD:-}
 
 volumes:
-  db_data:
+  mysql_data:

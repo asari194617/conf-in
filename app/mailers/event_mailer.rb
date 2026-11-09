@@ -1,6 +1,6 @@
 # coding: utf-8
 class EventMailer < ActionMailer::Base
-  default from: $ADMIN_EMAIL
+  default from: -> { Rails.configuration.x.mail_from }
 
   # Subject can be set in your I18n file at config/locales/en.yml
   # with the following lookup:

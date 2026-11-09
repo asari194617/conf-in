@@ -1,4 +1,4 @@
-class AddUserInfomationToUsers < ActiveRecord::Migration
+class AddUserInfomationToUsers < ActiveRecord::Migration[4.2]
   def change
     add_column :users, :name, :string
     add_column :users, :memo, :text
