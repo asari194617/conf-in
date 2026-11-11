@@ -19,6 +19,7 @@ services:
     depends_on:
       - db
     environment:
+      SECRET_TOKEN: ${SECRET_TOKEN:?Set a unique random SECRET_TOKEN in .env}
       DATABASE_HOST: db
       DATABASE_USER: root
       DATABASE_PASSWORD: password

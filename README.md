@@ -23,3 +23,23 @@ docker-compose up --build
 ```
 
 メール送信機能を利用する場合は、`.env.template`ファイルを元にして環境変数を設定してください。
+
+## Required signing secret (legacy master branch)
+
+Before starting this legacy branch, copy `.env.template` to `.env` and set
+`SECRET_TOKEN` to a new, unique random value. For example, generate one locally:
+
+```sh
+ruby -rsecurerandom -e 'puts SecureRandom.hex(64)'
+```
+
+Keep the generated value private. Docker Compose passes `SECRET_TOKEN` from `.env`
+to the web container. When running Rails directly, export it in the process
+environment first. Startup fails if it is missing or shorter than 30 characters.
+Never commit `.env` or reuse the old signing secret from Git history.
+
+The previously hard-coded signing secret originated upstream and remains public
+in repository history and other copies. Removing it from this branch does not
+revoke it. Any deployment that used that value must replace it; changing the
+signing secret invalidates previously signed cookies. This fix does not make the
+legacy Rails dependencies safe for production; upgrade them before deployment.
